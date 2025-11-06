@@ -2,8 +2,9 @@
 pragma solidity ^0.8;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {MyNFT} from "./MyNFT.sol";
 
-contract nftAuction is ERC721{
+contract nftAuction is MyNFT{
     struct Auction {
         address seller;
         uint256 startTime;
@@ -58,7 +59,20 @@ contract nftAuction is ERC721{
         Auction auction = auctions[_auctionId];
         require(!auction.ended,"拍卖已结束");
         require(auction.startTime + auction.duration <= block.timestamp,"拍卖还未到结束时间");
-        IERC721(auction.nftAddress).safeTransferFrom(address(this), msg.sender, auction.tokenId);
+        MyNFT(auction.nftAddress).safeTransferFrom(address(this), msg.sender, auction.tokenId);
         auction.ended = true;
+    }
+
+    function mint(address to, uint256 tokenId) external {
+        require(msg.sender == admin,"无权限铸币");
+        _mint(to, tokenId);
+    }
+
+    function burn(uint256 tokenId) external {
+        _burn(tokenId);
+    }
+
+    function _baseURI() internal view override returns (string memory){
+        return "ipfs://bafybeie6axsbf35fgbfhvscfzokyad3k3wdp3eu2qcxmpdccb6dj5ytclm/";
     }
 }
