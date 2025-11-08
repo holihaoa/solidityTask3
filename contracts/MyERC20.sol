@@ -4,7 +4,7 @@ pragma solidity ^0.8.21;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract ERC20 is IERC20 {
+contract MyERC20 is IERC20 {
     mapping ( address => uint256 ) public balances;
     mapping (address => mapping (address => uint256)) public override allowance;
     uint256 private _totalSupply;

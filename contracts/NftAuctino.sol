@@ -34,9 +34,13 @@ contract NftAuction is Initializable, INFTAuction, UUPSUpgradeable {
         _;
     }
 
+//    constructor(address _factory) {
+//        factory = _factory;
+//    }
+
     function initialize(address _factory) public initializer {
-        factory = _factory;
         admin = msg.sender;
+        factory = _factory;
     }
 
     //ETH/USD:0x694AA1769357215DE4FAC081bf1f309aDC325306
@@ -82,8 +86,8 @@ contract NftAuction is Initializable, INFTAuction, UUPSUpgradeable {
     function createAuction(uint256 _startPrice, uint256 _duration, address _nftAddress, uint256 _tokenId) public {
         require(_startPrice > 0, "The starting auction price should be higher than 0");
         require(_duration >= 10, "The auction duration is longer than 10 seconds");
-        address owner = MyNFT(_nftAddress).ownerOf(_tokenId);
-        require(owner == msg.sender, "only owner can create auction");
+//        address owner = MyNFT(_nftAddress).ownerOf(_tokenId);
+//        require(owner == msg.sender, "only owner can create auction");
         auctions[nextAuctionId] = Auction({
             seller: msg.sender,
             startTime: block.timestamp,
@@ -126,6 +130,34 @@ contract NftAuction is Initializable, INFTAuction, UUPSUpgradeable {
         auction.highestBidder = msg.sender;
         auction.highestBid = price;
         auction.tokenAddress = _tokenAddress;
+    }
+
+    function priceBid(uint256 price, address _tokenAddress) external payable {
+        uint256 payValue ;
+        if (_tokenAddress == address(0)) {
+            price = msg.value;
+            payValue = price * uint(getChainlinkDataFeedLatestAnswer(_tokenAddress));
+        } else {
+            payValue = price * uint(getChainlinkDataFeedLatestAnswer(_tokenAddress));
+        }
+        uint256 startPriceValue = currentAuction.startPrice * uint(getChainlinkDataFeedLatestAnswer(_tokenAddress));
+        uint256 highestBidValue = currentAuction.highestBid * uint(getChainlinkDataFeedLatestAnswer(_tokenAddress));
+        require(!currentAuction.ended && currentAuction.startTime < block.timestamp && block.timestamp < (currentAuction.startTime + currentAuction.duration), "The auction has ended or has not yet begun");
+        require(payValue >= startPriceValue, "The bid cannot be less than the starting price");
+        require(payValue > highestBidValue, "The bid is lower than the highest price of this auction");
+        if (_tokenAddress != address(0)) {
+            IERC20(_tokenAddress).transferFrom(msg.sender, address(this), price);
+        }
+        if (currentAuction.highestBid > 0) {
+            if (currentAuction.tokenAddress == address(0)) {
+                payable(currentAuction.highestBidder).transfer(currentAuction.highestBid);
+            } else {
+                IERC20(currentAuction.tokenAddress).transfer(currentAuction.highestBidder, currentAuction.highestBid);
+            }
+        }
+        currentAuction.highestBidder = msg.sender;
+        currentAuction.highestBid = price;
+        currentAuction.tokenAddress = _tokenAddress;
     }
 
     function endAuction(uint256 _auctionId) external {
