@@ -16,7 +16,8 @@ module.exports = async function({deployments,getNamedAccounts}) {
     await auctionFactoryProxyV2.waitForDeployment();
     const proxyAddressV2 = await auctionFactoryProxyV2.getAddress();
     const implAddressV2 = await upgrades.erc1967.getImplementationAddress(proxyAddressV2);
-    console.log("目标合约地址升级:", implAddressV2);
+    console.log("逻辑合约地址升级:", implAddressV2);
+    console.log("升级后工厂代理合约地址:", proxyAddressV2);
     fs.writeFileSync(storePath, JSON.stringify({proxyAddress: proxyAddressV2, implementAddress: implAddressV2, abi}));
     await save("auctionFactoryProxy",{
         abi: auctionFactoryV2.interface.format("json"),
